@@ -85,7 +85,6 @@ def find_section_pages(pdf_path: str, section_title: str = config.TARGET_SECTION
                 "(cont'd)" in top_text
                 or "(cont" in top_text.lower()
                 or "(cont'd)" in full_text
-                or "as configured vehicle" in full_text.lower()
             )
             if is_continuation:
                 section_pages.append(i)
@@ -110,6 +109,8 @@ def find_section_pages(pdf_path: str, section_title: str = config.TARGET_SECTION
         logger.warning(f"Section '{section_title}' not found in {pdf_path}. Defaulting to pages 0-2.")
         section_pages = [0, 1, 2]
 
+    # Deduplicate while preserving order (safety net against double-adding)
+    section_pages = list(dict.fromkeys(section_pages))
     return section_pages
 
 
