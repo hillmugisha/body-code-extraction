@@ -23,7 +23,7 @@ def scan_input_folder(input_dir: str | None = None) -> list[str]:
     return [str(p) for p in all_pdfs if p.name not in completed]
 
 
-def process_single_pdf(pdf_path: str, job_id: str | None = None, uploaded_by: str | None = None) -> dict:
+def process_single_pdf(pdf_path: str, job_id: str | None = None, uploaded_by: str | None = None, environment: str = "development") -> dict:
     """
     Full pipeline for one PDF:
       1. Insert job (running)
@@ -44,6 +44,7 @@ def process_single_pdf(pdf_path: str, job_id: str | None = None, uploaded_by: st
         template_used=template_used,
         status="running",
         uploaded_by=uploaded_by,
+        environment=environment,
     )
     logger.info(f"[{job_id}] Started: {pdf_name}")
 
@@ -127,6 +128,6 @@ def run_batch(input_dir: str | None = None) -> list[dict]:
     logger.info(f"Found {len(pdfs)} PDF(s) to process.")
     results = []
     for pdf_path in pdfs:
-        summary = process_single_pdf(pdf_path)
+        summary = process_single_pdf(pdf_path, environment=config.ENVIRONMENT)
         results.append(summary)
     return results

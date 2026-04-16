@@ -40,6 +40,7 @@ def insert_job(
     template_used: str,
     status: str = "running",
     uploaded_by: Optional[str] = None,
+    environment: str = "development",
 ) -> None:
     client = get_client()
     payload: dict = {
@@ -48,6 +49,7 @@ def insert_job(
         "pdf_path": pdf_path,
         "template_used": template_used,
         "status": status,
+        "environment": environment,
     }
     if uploaded_by:
         payload["uploaded_by"] = uploaded_by

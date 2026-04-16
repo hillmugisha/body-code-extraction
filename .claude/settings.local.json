@@ -39,7 +39,8 @@
       "Bash(python3 -m pip install \"httpx[http2]\")",
       "Bash(python3 main.py run \"input/26VL062 - Barto030 - MSRP \\(Upadated\\).pdf\")",
       "Bash(python3 -m pip install Pillow)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(sort -t_ -k2 -r)"
     ]
   }
 }

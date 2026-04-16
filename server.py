@@ -39,6 +39,7 @@ async def extract(
     file: UploadFile = File(...),
     job_id: str = Form(...),
     uploaded_by: str = Form(None),
+    environment: str = Form('production'),
 ):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are accepted")
@@ -52,6 +53,7 @@ async def extract(
         str(dest_path),
         job_id=job_id,
         uploaded_by=uploaded_by,
+        environment=environment,
     )
 
     return {"job_id": job_id, "filename": file.filename}

@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
     serviceForm.append('file', file)
     serviceForm.append('job_id', jobId)
     if (uploadedBy) serviceForm.append('uploaded_by', uploadedBy)
+    serviceForm.append('environment', process.env.NODE_ENV === 'production' ? 'production' : 'development')
 
     const res = await fetch(`${PIPELINE_URL}/extract`, {
       method: 'POST',

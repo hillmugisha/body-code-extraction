@@ -8,11 +8,12 @@ const ADMIN_EMAIL = 'hill.mugisha@pritchards.com'
 export async function GET(request: NextRequest) {
   const email = request.nextUrl.searchParams.get('email') ?? ''
   const isAdmin = email.toLowerCase() === ADMIN_EMAIL
+  const env = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 
   // Fetch jobs and latest per-job accuracy snapshots in parallel
   const jobsQuery = isAdmin
-    ? supabase.from('jobs').select('*').order('created_at', { ascending: false })
-    : supabase.from('jobs').select('*').eq('uploaded_by', email).order('created_at', { ascending: false })
+    ? supabase.from('jobs').select('*').eq('environment', env).order('created_at', { ascending: false })
+    : supabase.from('jobs').select('*').eq('uploaded_by', email).eq('environment', env).order('created_at', { ascending: false })
 
   const [jobsRes, snapRes] = await Promise.all([
     jobsQuery,
