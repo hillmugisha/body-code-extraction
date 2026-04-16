@@ -1,35 +1,29 @@
 import { NextResponse } from 'next/server'
-import { readFile } from 'fs/promises'
-import { supabase } from '@/lib/supabase'
+
+const PIPELINE_URL = process.env.PIPELINE_SERVICE_URL
 
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
-  const { data: job, error } = await supabase
-    .from('jobs')
-    .select('pdf_path, pdf_filename')
-    .eq('job_id', params.id)
-    .single()
-
-  if (error || !job) {
-    return NextResponse.json({ error: 'Job not found' }, { status: 404 })
-  }
-  if (!job.pdf_path) {
-    return NextResponse.json({ error: 'PDF path not recorded for this job' }, { status: 404 })
+  if (!PIPELINE_URL) {
+    return NextResponse.json({ error: 'Pipeline service not configured' }, { status: 503 })
   }
 
-  try {
-    const fileBuffer = await readFile(job.pdf_path)
-    const filename = job.pdf_filename ?? 'document.pdf'
+  const res = await fetch(`${PIPELINE_URL}/files/pdf/${params.id}`)
 
-    return new NextResponse(fileBuffer, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-      },
-    })
-  } catch {
-    return NextResponse.json({ error: 'PDF file not found on disk' }, { status: 404 })
+  if (!res.ok) {
+    return NextResponse.json({ error: 'PDF not available' }, { status: res.status })
   }
+
+  const buffer = await res.arrayBuffer()
+  const contentDisposition =
+    res.headers.get('content-disposition') ?? 'attachment; filename="document.pdf"'
+
+  return new NextResponse(buffer, {
+    headers: {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': contentDisposition,
+    },
+  })
 }

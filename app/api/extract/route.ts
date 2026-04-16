@@ -1,24 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile } from 'fs/promises'
-import { join } from 'path'
 import { randomUUID } from 'crypto'
-import { spawn, spawnSync } from 'child_process'
 
-const INPUT_DIR = join(process.cwd(), 'input')
-const PYTHON_SCRIPT = join(process.cwd(), 'main.py')
-
-/** Find the Python executable available on this machine. */
-function getPythonExe(): string {
-  for (const candidate of ['python3', 'python', 'py']) {
-    const result = spawnSync(candidate, ['--version'], { encoding: 'utf8' })
-    if (result.status === 0) return candidate
-  }
-  return 'python3' // fallback
-}
-
-const PYTHON_EXE = getPythonExe()
+const PIPELINE_URL = process.env.PIPELINE_SERVICE_URL
 
 export async function POST(request: NextRequest) {
+  if (!PIPELINE_URL) {
+    return NextResponse.json({ error: 'Pipeline service not configured' }, { status: 503 })
+  }
+
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File | null
@@ -31,26 +20,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Only PDF files are accepted' }, { status: 400 })
     }
 
-    // Generate job_id here so the browser can track this exact job
     const jobId = randomUUID()
 
-    // Save uploaded PDF to input/
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    const destPath = join(INPUT_DIR, file.name)
-    await writeFile(destPath, buffer)
+    const serviceForm = new FormData()
+    serviceForm.append('file', file)
+    serviceForm.append('job_id', jobId)
+    if (uploadedBy) serviceForm.append('uploaded_by', uploadedBy)
 
-    // Spawn Python pipeline with the pre-generated job_id and uploader email
-    const args = [PYTHON_SCRIPT, 'run', destPath, '--job-id', jobId]
-    if (uploadedBy) args.push('--uploaded-by', uploadedBy)
-
-    const child = spawn(PYTHON_EXE, args, {
-      detached: true,
-      stdio: 'ignore',
-      env: { ...process.env },
-      windowsHide: true,
+    const res = await fetch(`${PIPELINE_URL}/extract`, {
+      method: 'POST',
+      body: serviceForm,
     })
-    child.unref()
+
+    if (!res.ok) {
+      const err = await res.text()
+      return NextResponse.json({ error: err }, { status: res.status })
+    }
 
     return NextResponse.json({ job_id: jobId, filename: file.name })
   } catch (err) {
