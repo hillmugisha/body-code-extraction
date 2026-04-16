@@ -23,7 +23,7 @@ def scan_input_folder(input_dir: str | None = None) -> list[str]:
     return [str(p) for p in all_pdfs if p.name not in completed]
 
 
-def process_single_pdf(pdf_path: str, job_id: str | None = None, uploaded_by: str | None = None, environment: str = "development") -> dict:
+def process_single_pdf(pdf_path: str, job_id: str | None = None, uploaded_by: str | None = None, environment: str = "development", storage_pdf_path: str | None = None) -> dict:
     """
     Full pipeline for one PDF:
       1. Insert job (running)
@@ -40,7 +40,7 @@ def process_single_pdf(pdf_path: str, job_id: str | None = None, uploaded_by: st
     db.insert_job(
         job_id=job_id,
         pdf_filename=pdf_name,
-        pdf_path=pdf_path,
+        pdf_path=storage_pdf_path or pdf_path,
         template_used=template_used,
         status="running",
         uploaded_by=uploaded_by,
@@ -81,6 +81,15 @@ def process_single_pdf(pdf_path: str, job_id: str | None = None, uploaded_by: st
         output_path = build_output_path(pdf_path)
         write_populated_workbook(result, output_path)
 
+        # --- Upload Excel to Supabase Storage ---
+        excel_bytes = Path(output_path).read_bytes()
+        storage_output_path = db.upload_to_storage(
+            bucket="outputs",
+            path=f"{job_id}/{Path(output_path).name}",
+            data=excel_bytes,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
         # --- Update job status ---
         final_status = "completed_with_warnings" if result.warnings else "completed"
         base_vehicle = result.items[0].code if result.items and result.items[0].code else None
@@ -90,7 +99,7 @@ def process_single_pdf(pdf_path: str, job_id: str | None = None, uploaded_by: st
             items_extracted=len(result.items),
             vehicle_title=result.vehicle_title,
             base_vehicle=base_vehicle,
-            output_path=output_path,
+            output_path=storage_output_path,
             page_range_start=result.page_range[0],
             page_range_end=result.page_range[1],
         )

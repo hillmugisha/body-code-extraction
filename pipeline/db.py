@@ -21,6 +21,22 @@ def get_client() -> Client:
     return _client
 
 
+def upload_to_storage(bucket: str, path: str, data: bytes, content_type: str) -> str:
+    """Upload bytes to Supabase Storage. Returns the storage path."""
+    client = get_client()
+    try:
+        response = client.storage.from_(bucket).upload(
+            path=path,
+            file=data,
+            file_options={"content-type": content_type, "upsert": True},
+        )
+        logger.info(f"Storage upload to {bucket}/{path} succeeded: {response}")
+    except Exception as e:
+        logger.error(f"Storage upload to {bucket}/{path} failed: {e}")
+        raise
+    return path
+
+
 def _retry(fn, retries: int = 3, delay: float = 0.5):
     """Run fn with retries on exception."""
     for attempt in range(retries):

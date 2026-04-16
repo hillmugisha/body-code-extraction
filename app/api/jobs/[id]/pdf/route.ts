@@ -1,29 +1,27 @@
 import { NextResponse } from 'next/server'
-
-const PIPELINE_URL = process.env.PIPELINE_SERVICE_URL
+import { supabaseServer } from '@/lib/supabase-server'
 
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
-  if (!PIPELINE_URL) {
-    return NextResponse.json({ error: 'Pipeline service not configured' }, { status: 503 })
+  const { data: job } = await supabaseServer
+    .from('jobs')
+    .select('pdf_path, pdf_filename')
+    .eq('job_id', params.id)
+    .single()
+
+  if (!job?.pdf_path) {
+    return NextResponse.json({ error: 'PDF not available' }, { status: 404 })
   }
 
-  const res = await fetch(`${PIPELINE_URL}/files/pdf/${params.id}`)
+  const { data, error } = await supabaseServer.storage
+    .from('pdfs')
+    .createSignedUrl(job.pdf_path, 120)
 
-  if (!res.ok) {
-    return NextResponse.json({ error: 'PDF not available' }, { status: res.status })
+  if (error || !data) {
+    return NextResponse.json({ error: 'Could not generate PDF link' }, { status: 500 })
   }
 
-  const buffer = await res.arrayBuffer()
-  const contentDisposition =
-    res.headers.get('content-disposition') ?? 'attachment; filename="document.pdf"'
-
-  return new NextResponse(buffer, {
-    headers: {
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': contentDisposition,
-    },
-  })
+  return NextResponse.redirect(data.signedUrl)
 }

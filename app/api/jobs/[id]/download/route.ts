@@ -1,30 +1,27 @@
 import { NextResponse } from 'next/server'
-
-const PIPELINE_URL = process.env.PIPELINE_SERVICE_URL
+import { supabaseServer } from '@/lib/supabase-server'
 
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
-  if (!PIPELINE_URL) {
-    return NextResponse.json({ error: 'Pipeline service not configured' }, { status: 503 })
+  const { data: job } = await supabaseServer
+    .from('jobs')
+    .select('output_path, pdf_filename')
+    .eq('job_id', params.id)
+    .single()
+
+  if (!job?.output_path) {
+    return NextResponse.json({ error: 'File not available' }, { status: 404 })
   }
 
-  const res = await fetch(`${PIPELINE_URL}/files/output/${params.id}`)
+  const { data, error } = await supabaseServer.storage
+    .from('outputs')
+    .createSignedUrl(job.output_path, 120)
 
-  if (!res.ok) {
-    return NextResponse.json({ error: 'File not available' }, { status: res.status })
+  if (error || !data) {
+    return NextResponse.json({ error: 'Could not generate download link' }, { status: 500 })
   }
 
-  const buffer = await res.arrayBuffer()
-  const contentDisposition =
-    res.headers.get('content-disposition') ?? 'attachment; filename="output.xlsx"'
-
-  return new NextResponse(buffer, {
-    headers: {
-      'Content-Type':
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': contentDisposition,
-    },
-  })
+  return NextResponse.redirect(data.signedUrl)
 }

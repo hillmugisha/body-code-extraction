@@ -48,12 +48,20 @@ async def extract(
     contents = await file.read()
     dest_path.write_bytes(contents)
 
+    storage_pdf_path = db.upload_to_storage(
+        bucket="pdfs",
+        path=f"{job_id}/{file.filename}",
+        data=contents,
+        content_type="application/pdf",
+    )
+
     background_tasks.add_task(
         process_single_pdf,
         str(dest_path),
         job_id=job_id,
         uploaded_by=uploaded_by,
         environment=environment,
+        storage_pdf_path=storage_pdf_path,
     )
 
     return {"job_id": job_id, "filename": file.filename}
