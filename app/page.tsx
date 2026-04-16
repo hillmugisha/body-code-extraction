@@ -47,53 +47,49 @@ export default function DashboardPage() {
       : 0
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* Page header */}
-      <div>
-        <div className="flex items-center justify-between pb-5 border-b border-gray-200">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Ryder - Body Code Extraction</h1>
-            <p className="text-sm text-gray-500 mt-1">Extract Ford vehicle specs with AI and automatically populate Ryder quote excel file.</p>
-          </div>
-          <button
-            onClick={() => setShowUpload((v) => !v)}
-            className="text-sm font-medium px-4 py-2 rounded-lg transition-colors text-white"
-            style={{ backgroundColor: showUpload ? '#193a76' : '#1F4993' }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#193a76')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = showUpload ? '#193a76' : '#1F4993')}
-          >
-            {showUpload ? '✕ Close Upload' : '+ Upload File'}
-          </button>
+      <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Ryder - Body Code Extraction</h1>
+          <p className="text-xs text-gray-500 mt-0.5">Extract Ford vehicle specs with AI and automatically populate Ryder quote excel file.</p>
         </div>
+        <button
+          onClick={() => setShowUpload((v) => !v)}
+          className="text-sm font-medium px-4 py-2 rounded-lg transition-colors text-white shrink-0"
+          style={{ backgroundColor: showUpload ? '#193a76' : '#1F4993' }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#193a76')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = showUpload ? '#193a76' : '#1F4993')}
+        >
+          {showUpload ? '✕ Close Upload' : '+ Upload File'}
+        </button>
       </div>
 
       {/* Inline upload panel */}
       {showUpload && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <h2 className="text-base font-semibold text-gray-800 mb-4">Upload PDF</h2>
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+          <h2 className="text-sm font-semibold text-gray-800 mb-3">Upload PDF</h2>
           <UploadDropzone />
         </div>
       )}
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-2 gap-4">
+      {/* KPI cards — single compact row */}
+      <div className="grid grid-cols-3 gap-3">
         <StatCard label="Total Requests" value={totalJobs} />
         <StatCard label="Items Extracted" value={totalItems} />
+        <AccuracyCard
+          label="Overall Accuracy"
+          score={accuracy}
+          subLabel={`Averaged across ${scoredJobs.length} scored request${scoredJobs.length !== 1 ? 's' : ''}`}
+          total={totalItems}
+          corrected={0}
+        />
       </div>
-
-      {/* Accuracy */}
-      <AccuracyCard
-        label="Overall Accuracy"
-        score={accuracy}
-        subLabel={`Averaged across ${scoredJobs.length} scored request${scoredJobs.length !== 1 ? 's' : ''}`}
-        total={totalItems}
-        corrected={0}
-      />
 
       {/* Recent jobs */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-800">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-base font-semibold text-gray-800">
             Recent Requests
             {runningJobs > 0 && (
               <span className="ml-2 inline-flex items-center gap-1 text-xs font-normal text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-full">
@@ -129,9 +125,9 @@ export default function DashboardPage() {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="text-3xl font-bold mt-1 text-gray-900">{value.toLocaleString()}</p>
+    <div className="bg-white rounded-lg border border-gray-100 shadow-sm px-4 py-3 transition-all duration-200 ease-out hover:scale-[1.02] hover:shadow-md hover:border-gray-200 cursor-default">
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className="text-2xl font-bold leading-tight text-gray-900">{value.toLocaleString()}</p>
     </div>
   )
 }
