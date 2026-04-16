@@ -72,14 +72,22 @@ def find_section_pages(pdf_path: str, section_title: str = config.TARGET_SECTION
             continue
 
         if in_section:
-            # Check if top 15% of page contains "(cont'd)"
+            # Check top 25% of page for continuation marker
             blocks = page.get_text("blocks")
             page_height = page.rect.height
-            top_cutoff = page_height * 0.15
+            top_cutoff = page_height * 0.25
             top_text = " ".join(
                 b[4] for b in blocks if b[1] < top_cutoff
             )
-            if "(cont'd)" in top_text or "(cont" in top_text.lower():
+            # Also check full page text for any continuation variant
+            full_text = page.get_text("text")
+            is_continuation = (
+                "(cont'd)" in top_text
+                or "(cont" in top_text.lower()
+                or "(cont'd)" in full_text
+                or "as configured vehicle" in full_text.lower()
+            )
+            if is_continuation:
                 section_pages.append(i)
             else:
                 in_section = False
@@ -111,7 +119,7 @@ def _call_claude(client: anthropic.Anthropic, system: str, user_text: str, image
         try:
             response = client.messages.create(
                 model=config.CLAUDE_MODEL,
-                max_tokens=4096,
+                max_tokens=8192,
                 system=system,
                 messages=[{
                     "role": "user",
