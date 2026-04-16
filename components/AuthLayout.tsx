@@ -50,7 +50,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         <main className="flex-1 px-4 py-4 md:px-8 md:py-8">{children}</main>
 
-        <footer className="border-t border-gray-200 bg-white py-4 px-4 md:px-8 text-center text-sm text-gray-400">
+        <footer className="border-t border-gray-200 bg-white py-3 px-4 md:px-8 text-center text-sm text-gray-400">
           © 2026 Pritchard. All rights reserved.
         </footer>
       </div>
