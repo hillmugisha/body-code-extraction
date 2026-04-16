@@ -28,7 +28,7 @@ def upload_to_storage(bucket: str, path: str, data: bytes, content_type: str) ->
         response = client.storage.from_(bucket).upload(
             path=path,
             file=data,
-            file_options={"content-type": content_type, "upsert": True},
+            file_options={"content-type": content_type, "upsert": "true"},
         )
         logger.info(f"Storage upload to {bucket}/{path} succeeded: {response}")
     except Exception as e:
